@@ -1,0 +1,18 @@
+﻿<!-- Left side column. contains the logo and sidebar -->
+<aside class="main-sidebar">
+<!-- sidebar: style can be found in sidebar.less -->
+<section class="sidebar">
+    <!-- Sidebar user panel -->
+    <div class="user-panel">
+    <!-- /.search form -->
+    <!-- sidebar menu: : style can be found in sidebar.less -->
+    <ul class="sidebar-menu">
+         <!-- text, action, path, controller, icon* -->
+        @Html.MenuItem("Dashboard", "Index", "/Admin/Dashboard", "Dashboard", "fa fa-dashboard")
+        @Html.MenuItem("Forms", "Forms", "/Admin/FormBuilder", "FormBuilder", "fa fa-file-o")
+        @Html.MenuItem("Form Builder", "DynamicCreator", "/Admin/FormBuilder", "FormBuilder", "fa fa-edit")
+        @Html.MenuItem("View Data", "Index", "/Admin/ViewData", "ViewData", "fa fa-table")    
+    </ul>
+</section>
+<!-- /.sidebar -->
+</aside>

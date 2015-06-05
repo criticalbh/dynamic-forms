@@ -1,0 +1,205 @@
+﻿@{
+    ViewBag.Title = "Home";
+    Layout = "/Areas/User/Views/Shared/_Layout.cshtml";
+    
+}
+@using AdmirSabanovic.Areas.User.Models;
+@model FormPreviewVM
+    <link href="~/Content/admin/plugins/chosen/chosen.css" rel="stylesheet" />
+
+   <div class="se-pre-con"></div>
+
+    <!-- Page Content -->
+    <section id="intro">
+        <div class="container text-center">
+            <div id="welcome" class="row">
+                <div class="col-md-12 col-sm-6">
+                    <h1>GET STARTED!</h1>
+                 </div>       
+                  <a id="fillformbtn" class="btn scroll">Fill some forms</a>
+            </div>
+            <div class="row" id="filltheform"> 
+                <div class="col-lg-6 col-lg-offset-3">  
+                    <form method="post" action="/home/storeform">
+                      <div class="form-group">
+                            <select name="formID" id="form_id" class="chosen-select form-control" style="width: 100%">
+                                @foreach (var item in Model.forms)
+                                {
+                                    <option value="@item.ID">@item.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-xs-3 control-label">Email</label>
+                            <div class="col-xs-8 ">
+                                <input type="text" name="email" class="form-control" value="" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                           <label class="col-xs-3 control-label">Name</label>
+                            <div class="col-xs-8 ">
+                                <input type="text" name="name" class="form-control" value="" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-xs-3 control-label">Surname</label>
+                            <div class="col-xs-8 ">
+                                <input type="text" name="surname" class="form-control" value="" />
+                            </div>
+                        </div>
+                        <div id="form_dynamic"></div>
+                    </form>
+                </div>   
+            </div>
+            <!-- /.row -->
+        </div>
+    </section>
+    <!-- /.container -->
+<script src="~/Content/admin/plugins/chosen/chosen.jquery.js"></script>
+<script>    
+    $("#filltheform").hide(function () {
+
+    });
+    $("#fillformbtn").click(function () {
+        $("#welcome").hide();
+        $("#filltheform").show();
+        for (var selector in config) {
+            $(selector).chosen(config[selector]);
+        }
+    });
+
+    $(function(){
+        var config = {
+            '.chosen-select': {},
+            '.chosen-select-deselect': { allow_single_deselect: true },
+            '.chosen-select-no-single': { disable_search_threshold: 10 },
+            '.chosen-select-no-results': { no_results_text: 'Oops, nothing found!' }
+        }
+        for (var selector in config) {
+            $(selector).chosen(config[selector]);
+        }
+
+        var loadForm = function(){
+            var selectedformtype = $('#form_id :selected').val();
+            if(typeof(selectedformtype) === "undefined"){
+                appendButtons();
+            }
+            else{
+                $.ajax({
+                    'type': "GET",
+                    'data': {
+                        id: selectedformtype
+                    },
+                    'url': "/Home/getDynamicForm",
+                    'success': function (data) {
+
+                        initForm(data);
+                    }
+                });
+            }
+        };
+
+
+        var appendButtons = function(){
+            var formButtons = '<div class="form-group form-actions"> \
+                      <div class="col-xs-8 col-xs-offset-3"> \
+                          <button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-floppy-o"></i> Save</button> \
+                          <button type="reset" class="btn btn-sm btn-warning"><i class="fa fa-repeat"></i> Reset</button> \
+                      </div> \
+                  </div>';
+
+
+            $('#form_dynamic').append(formButtons);
+        }
+
+
+
+        loadForm();
+
+        $( "#form_id" ).chosen().change(function() {
+            //when another category is selected, reset dynamic forms and add new one.
+            $('#form_dynamic').empty();
+            loadForm();
+        });
+
+        var initForm = function(formData){
+            // console.log(formData);
+            var formToAppend = JSON.parse(formData).fields;
+
+            //quick fix
+            formToAppend.forEach(function(dynamicForm){
+                switch(dynamicForm.field_type){
+                    case "text":
+                        if(typeof(dynamicForm.field_options.description) === "undefined"){
+                            dynamicForm.field_options.description = "";
+                        }
+                   
+                        if(dynamicForm.required == true){
+                            $('#form_dynamic').append('<div class="form-group"><label class="col-xs-3 control-label">' + dynamicForm.label + '</label><div class="col-xs-8 "><input class="form-control" type="text" placeholder="'+dynamicForm.field_options.description+'" name="'+dynamicForm.label+'" required></div></div>');
+                        }
+                        else{
+                            $('#form_dynamic').append('<div class="form-group"><label class="col-xs-3 control-label">' + dynamicForm.label + '</label><div class="col-xs-8 "><input class="form-control" type="text" placeholder="'+dynamicForm.field_options.description+'" name="'+dynamicForm.label+'"></div>');
+                        }
+                        break;
+                    case "paragraph":
+                        if(typeof(dynamicForm.field_options.description) === "undefined"){
+                            dynamicForm.field_options.description = "";
+                        }
+                        if(dynamicForm.required == true){
+                            $('#form_dynamic').append('<div class="form-group"><label class="col-xs-3 control-label">' + dynamicForm.label + '</label><div class="col-xs-8 "><textarea cols=50 rows=3 placeholder="'+dynamicForm.field_options.description+'" class="form-control" name="'+dynamicForm.label+' required"></textarea></div></div>');
+                        }else{
+                            $('#form_dynamic').append('<div class="form-group"><label class="col-xs-3 control-label">' + dynamicForm.label + '</label><div class="col-xs-8 "><textarea cols=50 rows=3 placeholder="'+dynamicForm.field_options.description+'" class="form-control" name="'+dynamicForm.label+' "></textarea></div></div>');
+                        }
+                        break;
+                    case "checkboxes":
+                        var options_checkbox="";
+                        var int = 1;
+                        if(typeof(dynamicForm.field_options.description) === "undefined"){
+                            dynamicForm.field_options.description = "";
+                        }
+                
+                        dynamicForm.field_options.options.forEach(function(b){
+                    
+                            options_checkbox+='<input type="checkbox" name="checkbox'+ int + ' ' + dynamicForm.label + ' "value="'+b.label+'"><span></span> '+ b.label +'<br/>';
+                            int++;
+
+                        });
+                        checkBoxOneButtonClass = "";
+                        if(int==2){
+                            checkBoxOneButtonClass = "switch switch-primary";
+                        }
+
+                
+                        $('#form_dynamic').append('<div class="form-group"><label class="col-xs-3 control-label">' + dynamicForm.label + '</label><div class="col-xs-8 "><label class="'+checkBoxOneButtonClass+'" >' + options_checkbox + '</label></div><div class="col-xs-8 ">'+ dynamicForm.field_options.description +'</div></div>'); 
+               
+                        break;
+                    case "dropdown":
+                        if(typeof(dynamicForm.field_options.description) === "undefined"){
+                            dynamicForm.field_options.description = "";
+                        }
+                        var options_dropdown = "";
+                        if(dynamicForm.field_options.include_blank_option === true){
+                            options_dropdown += "<option></option>";
+                        }
+                        dynamicForm.field_options.options.forEach(function(b){
+                            options_dropdown += "<option>"+ b.label +"</option>";
+                        });
+               
+                        $('#form_dynamic').append('<div class="form-group"><label class="col-xs-3 control-label">' + dynamicForm.label + '</label><div class="col-xs-8 "><select class="chosen-select" name="'+dynamicForm.label+'">' + options_dropdown + '</select></div><div class="col-xs-8 ">'+ dynamicForm.field_options.description +'</div></div>');
+                        var config = {
+                            '.chosen-select'           : {width: "100%"},
+                            '.chosen-select-deselect'  : {allow_single_deselect:true},
+                            '.chosen-select-no-single' : {disable_search_threshold:10},
+                            '.chosen-select-no-results': {no_results_text:'Oops, nothing found!'}
+                        }
+                        for (var selector in config) {
+                            $(selector).chosen(config[selector]);
+                        }
+                        break;
+                }
+            });
+            //When form is appended properly add form Buttons.
+            appendButtons();
+        }
+    });
+</script>

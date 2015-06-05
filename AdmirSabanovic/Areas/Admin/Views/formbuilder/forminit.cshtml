@@ -1,0 +1,202 @@
+﻿@using AdmirSabanovic.Areas.Admin.Models;
+@{
+    ViewBag.Title = "Dashboard";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var USER = ViewBag.User as AdmirSabanovic.Areas.Admin.Models.Admin;
+    List<Forms> allForms = (List<Forms>)ViewData["allForms"];
+    String formUpdateUrl = "/FormBuilder/UpdateForms";
+}
+@model AdmirSabanovic.Areas.Admin.Models.Forms
+@section body_styles
+{
+    <link rel="stylesheet" type="text/css" href="~/Content/wysihtml5/lib/css/prettify.css"></link>
+    <link rel="stylesheet" type="text/css" href="~/Content/wysihtml5/src/bootstrap-wysihtml5.css"></link>
+    <link rel="stylesheet" type="text/css" href="~/Content/admin/plugins/bootstrap3-editable/css/bootstrap-editable.css"></link>
+    <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.css"></link>
+}
+<div class="content-wrapper">
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <h1>
+    Form Builder
+    <small>create your form here</small>
+    </h1>
+</section>
+
+<!-- Main content -->
+<section class="content">
+    <!-- Default box -->
+    <div class="box">
+    <div class="box-body">
+        <div class="row">
+            @using (Html.BeginForm()) {
+                @Html.ValidationSummary(true)
+                <div class="col-md-4">
+                    <input type="hidden" name="adminIdentifier" value="@{@USER.Email}">
+                    <div class="form-group">
+                        @Html.TextBoxFor(model => model.Name, 
+                            new { @class = "form-control", @placeholder="Enter name of form" })
+                        @Html.ValidationMessageFor(model => model.Name)
+                    </div>
+                    <div class="form-group">
+                        @Html.TextBoxFor(model => model.ShortDescription, 
+                            new { @class = "form-control", @placeholder="Enter short description.." })
+                    </div>
+                    <div class="form-group">
+                        @Html.TextAreaFor(model => model.Description, 
+                            new { @class = "form-control wyswyg", @placeholder="Description" })
+                    </div>
+                    <div class="row">
+                    <div class="col-xs-4">
+                        <button type="submit" class="btn btn-primary btn-block btn-flat">Create</button>
+                    </div><!-- /.col -->
+                    </div>
+                </div>
+            }
+            <div class="col-md-8">
+                <table id="formsTable" class="table table-hover table-condensed">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Description</th>
+                      <th>Author</th>
+                      <th>Created</th>
+                      <th>Updated</th>
+                      <th>Details</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @{
+                       int counter = 1; 
+                       foreach (var item in allForms) {
+                            <tr>
+                              <th scope="row">@counter</th>
+                              <td>
+                                  <a href="#" data-name="Name" class="formEdit" data-type="text" data-pk="@item.ID" data-url=@{@formUpdateUrl}>@item.Name</a>
+                              </td>
+                              <td>
+                                  <a href="#" data-name="ShortDescription" class="formEdit" data-type="text" data-pk="@item.ID" data-url=@{@formUpdateUrl}>@item.ShortDescription</a>
+                              </td>
+                              <td>@item.Admin.Name</td>
+                              <td>@item.Created_at</td>
+                              <td>@item.Updated_at</td>
+                              <td><a href="#" class="showFullDescription" data-pk="@item.ID">Full Description</a></td>
+                              <td><a href="#"><i data-pk="@item.ID" class="fa fa-times delete"></i></a></td>
+                            </tr>
+                        counter++;
+                        }
+                    }
+                  </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div><!-- /.box-body -->
+    </div><!-- /.box -->
+
+</section><!-- /.content -->
+</div><!-- /.content-wrapper -->
+
+<!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                 <h4 class="modal-title">Modal title</h4>
+
+            </div>
+            <div class="modal-body">
+                <div class="te">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" id="saveLongDescription" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+@section body_scripts
+{
+    <script src="~/Content/wysihtml5/lib/js/wysihtml5-0.3.0.js"></script>
+    <script src="~/Content/wysihtml5/lib/js/prettify.js"></script>
+    <script src="~/Content/wysihtml5/src/bootstrap-wysihtml5.js"></script>
+    <script src="~/Content/admin/plugins/bootstrap3-editable/js/bootstrap-editable.js"></script>
+    <script src="//cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js"></script>
+    <script src="//cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.js"></script>
+    
+    <script>
+       
+        $(document).ready(function () {
+            //turn to inline mode
+            $.fn.editable.defaults.mode = 'inline';
+            $.fn.editable.defaults.ajaxOptions = { type: "PUT" };
+            $('.formEdit').editable();
+            $('.wyswyg').wysihtml5();
+
+            var table = $('#formsTable').DataTable();
+
+            $('.delete').click(function () {
+                var row = $(this).closest("tr").get(0);
+                var pk = $(this).data("pk");
+                removeRow(table, row, pk);
+            });
+
+            $('.showFullDescription').click(function () {
+                var pk = $(this).data("pk");
+                var url =  "/FormBuilder/GetFormsLongDescription";
+                $("#myModal").modal("show");
+                $.ajax({
+                    url: url,
+                    data: { pk: pk },
+                    cache: false,
+                    method: "GET",
+                    success: function (response) {
+                        $(".modal-body").html('<textarea class="long_descr form-control">' + response + '</textarea>');
+                        $(".modal-body").append("<input type='hidden' value=" + pk + " id='longDescIdPk' />");
+                        $(".modal-title").html("Edit Description");
+                        $('.long_descr').wysihtml5();
+                    }
+                });
+            });
+
+            $("#saveLongDescription").click(function () {
+                var value = editor.getValue();
+                var name = "Description";
+                var pk = $("#longDescIdPk").val();
+                var url = "/FormBuilder/UpdateForms";
+                $.ajax({
+                    url: url,
+                    data: { pk: pk, name: name, value: value },
+                    cache: false,
+                    method: "PUT",
+                    success: function () {
+                        $("#myModal").modal("hide");
+                    }
+                });
+                
+            });
+        });
+
+        function removeRow(table, row, pk) {
+            var url = '/FormBuilder/DeleteForm';
+            var data = pk;
+
+            $.ajax({
+                url: url,
+                data: {pk : data},
+                cache: false,
+                method : "DELETE",
+                success: function () {
+                   table.row(row).remove().draw(false);
+                }
+            });
+        }
+    </script>
+}
