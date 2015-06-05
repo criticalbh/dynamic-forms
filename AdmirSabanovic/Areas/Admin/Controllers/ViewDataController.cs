@@ -47,7 +47,7 @@ namespace AdmirSabanovic.Areas.Admin.Controllers
             String sSortDir = HttpContext.Request["order[0][dir]"];
 
             String search = Request.QueryString["search[value]"];
-            Int32 formID = Convert.ToInt16(Request.QueryString["formName"]);
+            Int16 formID = Convert.ToInt16(Request.QueryString["formName"]);
 
             ViewDataTable vtd = new ViewDataTable();
             JavaScriptSerializer ser = new JavaScriptSerializer();
