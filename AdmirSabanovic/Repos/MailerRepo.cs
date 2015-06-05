@@ -9,8 +9,8 @@ namespace AdmirSabanovic.Repos
 {
     public class MailerRepo
     {
-        private const String username = "criticalado@gmail.com";
-        private const String password = "restart1040z\"";
+        private const String username = "username@gmail.com";
+        private const String password = "password";
         public MailerRepo(String to, String subject, String body)
         {
             this.To = to;
