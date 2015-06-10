@@ -44,21 +44,23 @@ namespace AdmirSabanovic.Repos
                 filteredUsers = filteredUsers.OrderBy(f => f.ID).Skip(iDisplayStart).Take(iDisplayLength);
             }
 
+            
             int count = 1;
             List<List<string>> lightUserList = new List<List<string>>();
             foreach (User currUser in filteredUsers)
             {
                 List<string> newUser = new List<string>();
                 newUser.Add(count++.ToString());
-                newUser.Add(currUser.Name);
-                newUser.Add(currUser.Surname);
-                newUser.Add(currUser.Email);
+                newUser.Add(editable("Name", currUser.ID, currUser.Name, "static"));
+                newUser.Add(editable("Surname", currUser.ID, currUser.Surname, "static"));
+                newUser.Add(editable("Email", currUser.ID, currUser.Email, "static"));
                 newUser.Add(currUser.isActivated == false ? "no" : "yes");
-                newUser.Add(currUser.Token);
+                newUser.Add(editable("Token", currUser.ID, currUser.Token, "static"));
                 newUser.Add(currUser.Registered.ToString());
+                newUser.Add("<a href='#'><i data-pk='" + currUser.ID + "' class='fa fa-times delete'></i></a>");
                 foreach (Additional item in additionalRepo.getAllDynamicFIeldsByUserID(currUser.ID))
                 {
-                    newUser.Add(item.Value);
+                    newUser.Add(editable(item.Key, currUser.ID, item.Value, "dynamic"));
                 }
                 lightUserList.Add(newUser);
             }
@@ -69,6 +71,12 @@ namespace AdmirSabanovic.Repos
             returnTable.Add("aaData", lightUserList);
 
             return returnTable;
+        }
+        private String editable(String name, int ID, String value, String type)
+        { 
+        String editable = "<a href='#' data-name='"+name+"' class='formEdit' " +
+           "data-type='text' data-pk='" + ID + "' data-formtip='" + type + "' data-url='/ViewData/updateUserData/'}>" + value + "</a>";
+        return editable;
         }
         DBContext db;
         UserRepository userRepo;

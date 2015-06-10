@@ -30,6 +30,12 @@ namespace AdmirSabanovic.Context
             return query;
         }
 
+        public virtual IQueryable<T> FindByWithInclude(System.Linq.Expressions.Expression<Func<T, bool>> predicate, String include)
+        {
+            IQueryable<T> query = _entities.Set<T>().AsNoTracking().Include(include).Where(predicate);
+            return query;
+        }
+
         public IQueryable<T> FindBy(System.Linq.Expressions.Expression<Func<T, bool>> predicate)
         {
             IQueryable<T> query = _entities.Set<T>().AsNoTracking().Where(predicate);

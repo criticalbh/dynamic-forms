@@ -1,4 +1,5 @@
-﻿using AdmirSabanovic.Areas.User.Models;
+﻿using AdmirSabanovic.Areas.Admin.Models;
+using AdmirSabanovic.Areas.User.Models;
 using AdmirSabanovic.Repos;
 using System;
 using System.Collections;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.Web.Script.Serialization;
 
 namespace AdmirSabanovic.Areas.User.Controllers
 {
@@ -24,7 +26,7 @@ namespace AdmirSabanovic.Areas.User.Controllers
         {
             FormPreviewVM data = new FormPreviewVM();
             data.forms = formRepo.getAllForms();
-            return View(data);
+            return View("Index", data);
         }
 
         public String getDynamicForm(int id) 
@@ -33,7 +35,7 @@ namespace AdmirSabanovic.Areas.User.Controllers
         }
 
         [HttpPost]
-        public void storeForm(FormCollection data){
+        public ActionResult storeForm(FormCollection data){
             String[] allKeys = data.AllKeys;
             int formID = Convert.ToInt32(data.GetValues(allKeys[0]).First());
             Hashtable dynamicFields = new Hashtable();
@@ -45,6 +47,8 @@ namespace AdmirSabanovic.Areas.User.Controllers
                 userRepo.storeUserFromStaticFields(staticFields, formID);
 
             additionalRepo.storeDynamicFields(user, dynamicFields);
+            ViewData["message"] = "Thanks for filling the form. Please verify your email.";
+            return Index();
         }
 
         private void seperateDynamicFromStatic(FormCollection data ,String [] allKeys, 
@@ -62,21 +66,26 @@ namespace AdmirSabanovic.Areas.User.Controllers
             }
         }
 
-        public void verify(int id, string code)
+        public ActionResult verify(int id, string code)
         {
             userRepo.verifyUser(id, code);
+            ViewData["message"] = "Thanks for veryfing email.";
+            return Index();
         }
 
+        public String getFormDetails(int id)
+        {
+            JavaScriptSerializer ser = new JavaScriptSerializer();
+            Forms returnForm = formRepo.FindByWithInclude(f => f.ID == id, "Admin").First();
+            Hashtable table = new Hashtable();
+            table.Add("admin", returnForm.Admin.Name);
+            table.Add("details", returnForm.Description);
+            table.Add("created_at", returnForm.Created_at.ToLongDateString());
+            return ser.Serialize(table);
+        }
 
-        /*
-         * old way of using repos.. if I find time I will refactor 
-         */
         FormCreatorRepoImpl formRepo;
         DynamicFormCreatorImpl dynamicRepo;
-
-        /*
-         * Generic Repositories
-         */
         UserRepository userRepo;
         AdditionalRepository additionalRepo;
     }

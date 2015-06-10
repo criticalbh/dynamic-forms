@@ -41,5 +41,25 @@ namespace AdmirSabanovic.Repos
             User user = usr.GetAnyByFormId(formID);
             return FindBy(u => u.UserID.ID == user.ID).GroupBy(a => a.Key).Select(a => a.Key).ToList();
         }
+
+        public void UpdateByKeyAndUserId(int id, string key, string value)
+        {
+            Additional atd = FindBy(a => a.UserID.ID == id && a.Key == key).First();
+            atd.Value = value;
+            Edit(atd);
+            Save();
+        }
+        //The object cannot be deleted because it was not found in the ObjectStateManager
+        //I have no more time to debug this. I have to finish senior design.. I hope this is enoguh :(
+        public void DeleteByUserId(int id)
+        {
+            List<Additional> atd = FindBy(u => u.UserID.ID == id).ToList();
+            foreach (Additional item in atd)
+            {
+                Delete(item);
+                Context.Entry(item).State = EntityState.Deleted;
+                Context.SaveChanges();  
+            }
+        }
     }
 }

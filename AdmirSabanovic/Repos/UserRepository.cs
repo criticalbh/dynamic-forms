@@ -5,6 +5,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Objects;
+using System.Globalization;
 using System.Linq;
 using System.Web;
 
@@ -22,6 +24,47 @@ namespace AdmirSabanovic.Repos
         {
             var q = GetAll().Where(s => s.Form_ID.ID == formID).First();
             return q;
+        }
+
+        public int CountAllByFormId(int formID) 
+        {
+            var q = GetAll().Where(s => s.Form_ID.ID == formID).ToList();
+            return q.Count();
+        }
+
+        public int[] CountingStatistics(int formID) {
+            int[] stats = new int[2];
+
+            int all = GetAll().Where(u => u.Form_ID.ID == formID).ToList().Count();
+            int activated = GetAll().Where(u => u.Form_ID.ID == formID && u.isActivated == true).ToList().Count();
+            stats[0] = all;
+            stats[1] = activated;
+            return stats;
+        }
+
+        public List<Hashtable> GetStatisticsByCreationByFormId(int formID)
+        {
+            List<Hashtable> returnTableInList = new List<Hashtable>();
+            List<DateTime?> dateTimes = dateTimeDistincted(formID);
+            foreach (var item in dateTimes)
+            {
+                var q = (from t in GetAll()
+                         where EntityFunctions.TruncateTime(t.Registered) == item
+                                              select t).ToList();
+                Hashtable table = new Hashtable();
+                table.Add("day", item.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+                table.Add("value", q.Count());
+                returnTableInList.Add(table);
+            }
+            return returnTableInList;
+        }
+
+        private List<DateTime?> dateTimeDistincted(int formID)
+        {
+            var distinctYearMonthsDays = (from t in GetAll()
+                                          where t.Form_ID.ID == formID
+                                          select EntityFunctions.TruncateTime(t.Registered)).Distinct().ToList();
+            return distinctYearMonthsDays;
         }
 
         public IQueryable<User> getAllAsIQueryable()
@@ -93,6 +136,35 @@ namespace AdmirSabanovic.Repos
             return user;
         }
 
+        public void UpdateUserByIdAndKey(int id, string key, string value)
+        {
+            User user = FindBy(u => u.ID == id).First();
+            switch(key)
+            {
+                case "Name":
+                    user.Name = value;
+                    break;
+                case "Surname":
+                    user.Surname = value;
+                    break;
+                case "Email":
+                    user.Email = value;
+                    break;
+                case "Token":
+                    user.Token = value;
+                    break;
+            }
+            Edit(user);
+            Save();
+        }
+
+        public void DeleteById(int id)
+        {
+            User usr = FindBy(u => u.ID == id).First();
+            Delete(usr);
+            Save();
+        }
+
         private String generateRandomToken(int length)
         {
             var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -107,6 +179,7 @@ namespace AdmirSabanovic.Repos
         {
             User userToVerify = FindBy(s=> s.ID == id && s.ActivationCode.Equals(code) == true).First();
             userToVerify.isActivated = true;
+            userToVerify.ActivationCode = null;
             Edit(userToVerify);
             Save();
         }

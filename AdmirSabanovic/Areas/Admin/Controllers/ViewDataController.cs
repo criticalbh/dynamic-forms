@@ -20,6 +20,7 @@ namespace AdmirSabanovic.Areas.Admin.Controllers
             db = new DBContext();
             vtd = new ViewDataTable();
             additionalRepo = new AdditionalRepository();
+            userRepo = new UserRepository();
         }
 
         //
@@ -65,10 +66,30 @@ namespace AdmirSabanovic.Areas.Admin.Controllers
             JavaScriptSerializer ser = new JavaScriptSerializer();
             return ser.Serialize(additionalRepo.getAllKeys(formid));
         }
+
+        public void updateUserData(int pk, String name, String value, String formtip)
+        {
+            switch (formtip)
+            { 
+                case "dynamic":
+                    additionalRepo.UpdateByKeyAndUserId(pk, name, value);
+                    break;
+                case "static":
+                    userRepo.UpdateUserByIdAndKey(pk, name, value);
+                    break;
+            }
+        }
+        public void DeleteUser(int pk)
+        {
+            additionalRepo.DeleteByUserId(pk);
+            userRepo.DeleteById(pk);
+        }
+
        
         DBContext db;
         FormCreatorRepoImpl form;
         ViewDataTable vtd;
         AdditionalRepository additionalRepo;
+        UserRepository userRepo;
     }
 }

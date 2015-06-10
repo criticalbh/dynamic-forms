@@ -9,7 +9,7 @@
 {
     <link href="~/Content/admin/plugins/chosen/chosen.css" rel="stylesheet" />
     <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.css" />
-
+    <link rel="stylesheet" type="text/css" href="~/Content/admin/plugins/bootstrap3-editable/css/bootstrap-editable.css"></link>
 }
 <div class="content-wrapper">
 <!-- Content Header (Page header) -->
@@ -66,11 +66,36 @@
     <script src="~/Content/admin/plugins/chosen/chosen.jquery.js"></script>
     <script src="//cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js"></script>
     <script src="//cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.js"></script>
-    
+    <script src="~/Content/admin/plugins/bootstrap3-editable/js/bootstrap-editable.js"></script>
     <script>
         $(function () {
+
+            $.fn.editable.defaults.mode = 'inline';
+            $.fn.editable.defaults.ajaxOptions = { type: "PUT" };
+            
+
+            function removeRow(row, pk) {
+                var url = '/ViewData/DeleteUser';
+                var data = pk;
+                table.row(row).remove().draw(false);
+                $.ajax({
+                    url: url,
+                    data: { pk: data },
+                    cache: false,
+                    method: "DELETE",
+                    success: function () {
+                        table.row(row).remove().draw(false);
+                    }
+                });
+            }
+
+            //because of some warnings issued by data tables (when some cells are missing data)
+            // I had to overwrite alert function xD
+            window.alert = function () {
+                console.log("You was alerted, but you better dont know it.");
+            }
             var initTable = function () {
-                $('#formsTable').DataTable({
+                var table = $('#formsTable').DataTable({
                     "processing": true,
                     "serverSide": true,
                     "lengthMenu": [[10, 25, 50, 100, 10000], [10, 25, 50, 100, "All"]],
@@ -79,6 +104,31 @@
                         "data": function (d) {
                             d.formName = $('#initForms-chosen :selected').val();
                         }
+                    },
+                    "fnDrawCallback": function (oSettings) {
+                        $('.formEdit').editable({
+                            params: function (params) {
+                                // add additional params from data-attributes of trigger element
+                                params.formtip = $(this).editable().data('formtip');
+                                return params;
+                            }
+                        });
+
+                        $('.delete').click(function () {
+                            var row = $(this).closest("tr").get(0);
+                            var pk = $(this).data("pk");
+                            var url = '/ViewData/DeleteUser';
+                            var data = pk;
+                            $.ajax({
+                                url: url,
+                                data: { pk: data },
+                                cache: false,
+                                method: "DELETE",
+                                success: function () {
+                                    table.row(row).remove().draw(false);
+                                }
+                            });
+                        });
                     }
                 });
             }
@@ -104,6 +154,7 @@
                     method: "GET",
                     success: function (response) {
                         var ret = JSON.parse(response);
+                        $("#dynamicColumns").append("<th class='appended'>Action</th>");
                         for (var prop in ret) {
                             $("#dynamicColumns").append("<th class='appended'>" + ret[prop] + "</th>");
                         }

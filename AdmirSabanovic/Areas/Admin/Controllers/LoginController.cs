@@ -1,4 +1,5 @@
-﻿using AdmirSabanovic.Repos.Admin;
+﻿using AdmirSabanovic.Repos;
+using AdmirSabanovic.Repos.Admin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,22 +21,17 @@ namespace AdmirSabanovic.Areas.Admin.Controllers
 
         [HttpPost]
         public ActionResult Index(AdmirSabanovic.Areas.Admin.Models.Admin admin) {
-            /*
+            
             if(ModelState.IsValid)
             {
                 if(isValid(admin.Email, admin.Password)){
                     FormsAuthentication.SetAuthCookie(admin.Email, false);
-                    return RedirectToAction("Admin/Dashboard");
+                    return RedirectToAction("index", "dashboard");
                 }
             }
 
-            return RedirectToAction("Admin/Dashboard");*/
-
-            FormsAuthentication.SetAuthCookie(admin.Email, false);
-           /* var data = admin;
-            return RedirectToAction("index", "dashboard", new { data = data });*/
-
             return RedirectToAction("index", "dashboard");
+            
         }
 
         public ActionResult logout() {
@@ -51,19 +47,26 @@ namespace AdmirSabanovic.Areas.Admin.Controllers
          * logout
          * formauthentication.signout
          */
-
-        private bool isValid(string email, string password) {
+        public void createAcc(String email, String pw)
+        {
             var crypto = new SimpleCrypto.PBKDF2();
-            using (var db = new DBContext())
-            {
-                var user = db.Admins.FirstOrDefault(
-                    u => u.Email == email
-                    );
-                if(user != null){
-                    if(user.Password == crypto.Compute(password)){
-                        return true;
-                    }
-                }
+            var encr = crypto.Compute(pw);
+            DBContext db = new DBContext();
+            AdmirSabanovic.Areas.Admin.Models.Admin newAdmin = new AdmirSabanovic.Areas.Admin.Models.Admin();
+            newAdmin.Email = email;
+            newAdmin.Password = encr.ToString();
+            newAdmin.Name = "testni";
+            newAdmin.LastName = "lik";
+            db.Admins.Add(newAdmin);
+            db.SaveChanges();
+        }
+        private bool isValid(string email, string password) {
+            DBContext db = new DBContext();
+            var crypto = new SimpleCrypto.PBKDF2();
+            String encr = crypto.Compute(password).ToString(); ;
+            var admin = db.Admins.FirstOrDefault(u => u.Email.CompareTo(email) == 1); 
+            if(admin != null){
+                return true;
             }
             return false;
         }
